@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
   build:
@@ -19,8 +21,8 @@ jobs:
     - name: Build Docker image
       run: docker build --file Dockerfile --tag ${{ github.repository }}:latest .
 
-    - name: Log in to GitHub Container Registry
-      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
-
     - name: Push Docker image to GitHub Container Registry
-      run: docker push ghcr.io/${{ github.repository }}:latest
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+        docker push ghcr.io/${{ github.repository }}:latest
